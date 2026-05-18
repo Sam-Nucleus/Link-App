@@ -886,7 +886,17 @@ async function bootApp() {
 
   // Fetch all reference data from server
   const data = await api('init-data');
-  if (!data) return;
+  if (!data) {
+    document.getElementById('app-loading').innerHTML =
+      '<div style="color:white;text-align:center;padding:24px;max-width:360px">' +
+      '<div style="font-size:32px;margin-bottom:12px">⚠️</div>' +
+      '<div style="font-size:16px;font-weight:600;margin-bottom:8px">Failed to load calculator data</div>' +
+      '<div style="font-size:13px;opacity:.6;margin-bottom:20px">Open the browser Console (F12) and look for a red "API error" message to see the details.</div>' +
+      '<button onclick="location.reload()" style="padding:10px 24px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Retry</button>' +
+      '<button onclick="signOut()" style="margin-left:12px;padding:10px 24px;background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">Sign Out</button>' +
+      '</div>';
+    return;
+  }
 
   // Hydrate global state the app needs
   window.APP_COUNTRIES   = data.countries;
