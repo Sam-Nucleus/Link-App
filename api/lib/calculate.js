@@ -141,8 +141,11 @@ function calculateManual({ style, planId, density, process, tubeType, voltage, c
 // ── Plan notes ────────────────────────────────────────────────────────────────
 function getPlanNotes(style, planId, lang) {
   const key = `${style}_${planId}`;
-  const langData = PLAN_NOTES_LANG[lang] || PLAN_NOTES_LANG['en'] || {};
-  return langData[key] || PLAN_NOTES_LANG['en']?.[key] || null;
+  // English notes live in PLAN_NOTES; other languages in PLAN_NOTES_LANG
+  if (lang === 'en' || !PLAN_NOTES_LANG[lang]) {
+    return PLAN_NOTES[key] || null;
+  }
+  return PLAN_NOTES_LANG[lang][key] || PLAN_NOTES[key] || null;
 }
 
 // ── Plans list (metadata only, no power data) ─────────────────────────────────
@@ -151,7 +154,8 @@ function getPlans(style) {
     id: p.id,
     name: p.name,
     descriptor: p.descriptor,
-    metrics: p.metrics
+    metrics: p.metrics,
+    img: p.img || null
   }));
 }
 

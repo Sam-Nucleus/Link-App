@@ -1286,6 +1286,7 @@ function renderPlans(style) {
       </div>
       <div class="plan-card-footer">
         <button class="btn-outline" onclick="openInfo('${style}','${plan.id}')">${T('btn_more_info')}</button>
+        ${plan.img ? `<button class="btn-outline" onclick="openProfile('${plan.name}','${plan.img}')">${T('btn_view_profile')}</button>` : ''}
         <button class="btn-primary" onclick="roastNow('${style}','${plan.id}','${plan.name}','')">${T('btn_roast_now')}</button>
       </div>
     </div>`).join('');
