@@ -853,20 +853,27 @@ function authHeaders() {
 
 // ── API helper ───────────────────────────────────────────────────────────────
 async function api(path, body=null) {
-  const opts = { headers: authHeaders(), cache: 'no-store' };
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), 12000);
+  const opts = { headers: authHeaders(), cache: 'no-store', signal: controller.signal };
   if (body) { opts.method = 'POST'; opts.body = JSON.stringify(body); }
   else      { opts.method = 'GET'; }
   try {
+    console.log('API call →', path);
     const r = await fetch('/api/' + path, opts);
+    clearTimeout(timeoutId);
     if (r.status === 401) { signOut(); return null; }
     if (!r.ok) {
       const txt = await r.text();
       console.error('API error', r.status, path, txt);
       return null;
     }
-    return await r.json();
+    const json = await r.json();
+    console.log('API ok ←', path);
+    return json;
   } catch(e) {
-    console.error('API fetch failed', path, e);
+    clearTimeout(timeoutId);
+    console.error('API fetch failed', path, e.name === 'AbortError' ? 'TIMED OUT after 12s' : e);
     return null;
   }
 }
@@ -888,10 +895,11 @@ async function bootApp() {
   const data = await api('init-data');
   if (!data) {
     document.getElementById('app-loading').innerHTML =
-      '<div style="color:white;text-align:center;padding:24px;max-width:360px">' +
+      '<div style="color:white;text-align:center;padding:24px;max-width:400px">' +
       '<div style="font-size:32px;margin-bottom:12px">⚠️</div>' +
       '<div style="font-size:16px;font-weight:600;margin-bottom:8px">Failed to load calculator data</div>' +
-      '<div style="font-size:13px;opacity:.6;margin-bottom:20px">Open the browser Console (F12) and look for a red "API error" message to see the details.</div>' +
+      '<div style="font-size:13px;opacity:.7;margin-bottom:6px">The server did not respond in time. This usually means the authentication service is unreachable.</div>' +
+      '<div style="font-size:12px;opacity:.5;margin-bottom:20px">Check the browser Console (F12 → Console) for a red "API fetch failed" line — it will say TIMED OUT or show the exact error.</div>' +
       '<button onclick="location.reload()" style="padding:10px 24px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Retry</button>' +
       '<button onclick="signOut()" style="margin-left:12px;padding:10px 24px;background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">Sign Out</button>' +
       '</div>';

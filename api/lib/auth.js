@@ -15,18 +15,26 @@ async function requireAuth(req, res) {
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
 
   if (!token) {
+    console.log('[auth] No token provided');
     res.status(401).json({ error: 'Not authenticated' });
     return null;
   }
 
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-
-  if (error || !user) {
-    res.status(401).json({ error: 'Invalid or expired session' });
+  console.log('[auth] Verifying token, length:', token.length, 'prefix:', token.slice(0,10));
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      console.log('[auth] Token rejected:', error?.message || 'no user');
+      res.status(401).json({ error: 'Invalid or expired session', detail: error?.message });
+      return null;
+    }
+    console.log('[auth] Token OK, user:', user.email);
+    return user;
+  } catch (e) {
+    console.error('[auth] getUser threw:', e.message);
+    res.status(500).json({ error: 'Auth check failed', detail: e.message });
     return null;
   }
-
-  return user;
 }
 
 module.exports = { requireAuth };
