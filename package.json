@@ -1,0 +1,9 @@
+{
+  "name": "link-calculator-secure",
+  "version": "1.0.0",
+  "description": "Nucleus Link Calculator — secure server-side deployment",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
