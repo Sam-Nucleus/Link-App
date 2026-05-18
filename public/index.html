@@ -1080,7 +1080,7 @@ function showTab(id, el) {
 
 // ── Main calculate (API call) ─────────────────────────────────────────────────
 async function calculate() {
-  const mode       = document.getElementById('roastMode')?.value || 'cupping';
+  const mode       = document.getElementById('mode')?.value || '';
   const densityRaw = parseFloat(document.getElementById('density')?.value);
   const process    = document.getElementById('process')?.value || '';
   const tubeType   = document.getElementById('tubeType')?.value || '';
@@ -1088,7 +1088,7 @@ async function calculate() {
   const out        = document.getElementById('results-content');
   if (!out) return;
 
-  if (!densityRaw || !process || !tubeType || !voltage) {
+  if (!mode || !densityRaw || !process || !tubeType || !voltage) {
     out.innerHTML = `<div class="results-placeholder"><p data-i18n="msg_fill_details">${T('msg_fill_details')||'Fill in your coffee details to see your recommendation'}</p></div>`;
     return;
   }

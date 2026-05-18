@@ -3,7 +3,7 @@
 
 const {
   POWER_CURVE, PLAN_PC_KEYS, COUNTRIES, VARIETIES, LEGACY,
-  PLANS, PLAN_NOTES_LANG, normalizePlan
+  PLANS, PLAN_NOTES, PLAN_NOTES_LANG, normalizePlan
 } = require('./data');
 
 // ── Utility ───────────────────────────────────────────────────────────────────
