@@ -1448,19 +1448,31 @@ function _fillVarietySel(id, varieties) {
 }
 
 function onCountryChange() {
-  if (document.getElementById('country').value) document.getElementById('continent').value='';
+  const val = document.getElementById('country').value;
+  const contField = document.getElementById('continent')?.closest('.field');
+  if (val) { document.getElementById('continent').value = ''; if (contField) contField.style.display = 'none'; }
+  else     { if (contField) contField.style.display = ''; }
   calculate(); updateAccordionSummary();
 }
 function onContinentChange() {
-  if (document.getElementById('continent').value) document.getElementById('country').value='';
+  const val = document.getElementById('continent').value;
+  const countryField = document.getElementById('country')?.closest('.field');
+  if (val) { document.getElementById('country').value = ''; if (countryField) countryField.style.display = 'none'; }
+  else     { if (countryField) countryField.style.display = ''; }
   calculate(); updateAccordionSummary();
 }
 function onManualCountryChange() {
-  if (document.getElementById('manual-country')?.value) document.getElementById('manual-continent').value='';
+  const val = document.getElementById('manual-country')?.value;
+  const contField = document.getElementById('manual-continent')?.closest('.field');
+  if (val) { document.getElementById('manual-continent').value = ''; if (contField) contField.style.display = 'none'; }
+  else     { if (contField) contField.style.display = ''; }
   calculateManual(); updateManualAccordionSummary();
 }
 function onManualContinentChange() {
-  if (document.getElementById('manual-continent')?.value) document.getElementById('manual-country').value='';
+  const val = document.getElementById('manual-continent')?.value;
+  const countryField = document.getElementById('manual-country')?.closest('.field');
+  if (val) { document.getElementById('manual-country').value = ''; if (countryField) countryField.style.display = 'none'; }
+  else     { if (countryField) countryField.style.display = ''; }
   calculateManual(); updateManualAccordionSummary();
 }
 
