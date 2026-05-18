@@ -216,7 +216,8 @@
 
 <!-- ── AUTH OVERLAY ─────────────────────────────────────────────────────── -->
 <div id="auth-overlay">
-  <div class="auth-card">
+  <!-- Login panel -->
+  <div class="auth-card" id="auth-login-panel">
     <div class="auth-logo">
       <svg width="48" height="56" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 2L37 11.5V30.5L20 40L3 30.5V11.5L20 2Z" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
@@ -236,6 +237,28 @@
     </div>
     <button class="auth-btn" id="auth-btn" onclick="signIn()">Sign In</button>
     <div class="auth-error" id="auth-error"></div>
+  </div>
+  <!-- Set password panel (shown when arriving from invite email) -->
+  <div class="auth-card" id="auth-setpw-panel" style="display:none">
+    <div class="auth-logo">
+      <svg width="48" height="56" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 2L37 11.5V30.5L20 40L3 30.5V11.5L20 2Z" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+        <text x="9" y="29" font-family="-apple-system,sans-serif" font-size="19" font-weight="700" fill="white" letter-spacing="-0.5">n</text>
+        <circle cx="28.5" cy="16.5" r="3" fill="none" stroke="white" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="auth-title">Set Your Password</div>
+    <div class="auth-sub">Choose a password to activate your account</div>
+    <div class="auth-field">
+      <label>New Password</label>
+      <input type="password" id="setpw-password" placeholder="Choose a password" autocomplete="new-password">
+    </div>
+    <div class="auth-field">
+      <label>Confirm Password</label>
+      <input type="password" id="setpw-confirm" placeholder="Repeat your password" autocomplete="new-password">
+    </div>
+    <button class="auth-btn" id="setpw-btn" onclick="setPassword()">Set Password &amp; Sign In</button>
+    <div class="auth-error" id="setpw-error"></div>
   </div>
 </div>
 
@@ -870,11 +893,70 @@ async function bootApp() {
   document.getElementById('app').style.display = '';
 }
 
+// ── Set password (from invite/recovery email) ─────────────────────────────────
+let _inviteToken = null;
+
+async function setPassword() {
+  const pw  = document.getElementById('setpw-password').value;
+  const pw2 = document.getElementById('setpw-confirm').value;
+  const btn = document.getElementById('setpw-btn');
+  const err = document.getElementById('setpw-error');
+  err.classList.remove('show');
+
+  if (!pw || pw.length < 6) {
+    err.textContent = 'Password must be at least 6 characters';
+    err.classList.add('show'); return;
+  }
+  if (pw !== pw2) {
+    err.textContent = 'Passwords do not match';
+    err.classList.add('show'); return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const data = await supabaseFetch('/auth/v1/user', {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + _inviteToken, 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ password: pw })
+  });
+
+  if (data.error) {
+    err.textContent = data.error_description || data.error || 'Failed to set password';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Set Password & Sign In';
+    return;
+  }
+
+  // Password set — now sign in properly
+  _session = { access_token: _inviteToken };
+  sessionStorage.setItem('link_session', JSON.stringify(_session));
+  await bootApp();
+}
+
 // ── On page load: restore session if present ─────────────────────────────────
 window.addEventListener('load', async () => {
   document.getElementById('auth-password').addEventListener('keydown', e => {
     if (e.key === 'Enter') signIn();
   });
+
+  // Check for invite/recovery token in URL hash
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    const type  = params.get('type');
+    if (token && (type === 'recovery' || type === 'invite')) {
+      _inviteToken = token;
+      window.history.replaceState(null, '', window.location.pathname);
+      document.getElementById('auth-overlay').classList.remove('hidden');
+      document.getElementById('auth-login-panel').style.display = 'none';
+      document.getElementById('auth-setpw-panel').style.display = '';
+      return;
+    }
+  }
+
   const stored = sessionStorage.getItem('link_session');
   if (stored) {
     try {
