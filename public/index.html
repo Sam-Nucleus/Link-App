@@ -1581,6 +1581,96 @@ function calculateAltitude() {
   const adjusted = (basePC * row[2]).toFixed(1);
   out.innerHTML=`<div class="result-recommendation"><div class="result-rec-label">Altitude Adjusted</div><div class="result-grid"><div class="result-item"><div class="rl">Factor</div><div class="rv">${row[2].toFixed(3)}</div></div><div class="result-item"><div class="rl">Adjusted PC</div><div class="rv big">${adjusted}</div></div></div></div>`;
 }
+
+// ── Missing wrappers (HTML calls these names) ─────────────────────────────────
+function setPlanStyle(style, el) { setStyle(style, el); }
+
+function altCalculate() {
+  const altitude = parseFloat(document.getElementById('alt-input')?.value);
+  const out = document.getElementById('alt-result-content');
+  if (!out) return;
+  if (isNaN(altitude)) {
+    out.innerHTML = '<div class="results-placeholder"><p>Enter your altitude to see the fan speed trim.</p></div>';
+    return;
+  }
+  const table = window.APP_ALTITUDE || [];
+  const row = table.find(([lo, hi]) => altitude >= lo && altitude < hi);
+  if (!row) {
+    out.innerHTML = '<div class="warn-box">Altitude out of calibration range (0–5,000 m).</div>';
+    return;
+  }
+  const factor = row[2];
+  const pct = ((factor - 1) * 100).toFixed(1);
+  const trimDisplay = factor === 1 ? 'No adjustment needed' : (factor > 1 ? '+' + pct + '%' : pct + '%');
+  out.innerHTML = `<div class="result-recommendation">
+    <div class="result-rec-label">Fan Speed Trim</div>
+    <div class="result-grid">
+      <div class="result-item"><div class="rl">Altitude</div><div class="rv">${altitude} m</div></div>
+      <div class="result-item"><div class="rl">Factor</div><div class="rv">${factor.toFixed(3)}</div></div>
+      <div class="result-item"><div class="rl">Trim</div><div class="rv big">${trimDisplay}</div></div>
+    </div>
+  </div>`;
+}
+
+function diUpdatePlans() {
+  const style = document.getElementById('di-style')?.value;
+  const plans = (window.APP_PLANS || {})[style] || [];
+  const sel = document.getElementById('di-plan');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select plan —</option>' +
+    plans.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  const fc = document.getElementById('di-default-fc');
+  if (fc) fc.value = '—';
+  const out = document.getElementById('di-result-content');
+  if (out) out.innerHTML = '<div class="results-placeholder"><p>Select a plan and enter your roast data to see the adjustment.</p></div>';
+}
+
+function diUpdateDefault() {
+  const style = document.getElementById('di-style')?.value;
+  const planId = document.getElementById('di-plan')?.value;
+  const plans = (window.APP_PLANS || {})[style] || [];
+  const plan = plans.find(p => p.id === planId);
+  const fc = document.getElementById('di-default-fc');
+  if (fc) fc.value = plan?.metrics?.['First Crack'] || '—';
+  diCalculate();
+}
+
+function diCalculate() {
+  const defaultFCStr = document.getElementById('di-default-fc')?.value || '';
+  const actualFCStr  = document.getElementById('di-actual-fc')?.value  || '';
+  const currentPC    = parseFloat(document.getElementById('di-profile')?.value);
+  const out          = document.getElementById('di-result-content');
+  if (!out) return;
+
+  const parseMSS = s => {
+    const parts = s.trim().split(':');
+    if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
+    return parseFloat(s) || null;
+  };
+
+  const defSecs    = parseMSS(defaultFCStr);
+  const actualSecs = parseMSS(actualFCStr);
+
+  if (!defSecs || !actualSecs || isNaN(currentPC)) {
+    out.innerHTML = '<div class="results-placeholder"><p>Select a plan and enter your roast data to see the adjustment.</p></div>';
+    return;
+  }
+
+  const diffSecs   = actualSecs - defSecs;
+  const adj        = (diffSecs / 10) * 0.5;
+  const newPC      = +(currentPC + adj).toFixed(1);
+  const direction  = adj > 0.05 ? 'Increase' : adj < -0.05 ? 'Reduce' : 'On Target';
+  const adjDisplay = adj === 0 ? '0.0' : (adj > 0 ? '+' : '') + adj.toFixed(1);
+
+  out.innerHTML = `<div class="result-recommendation">
+    <div class="result-rec-label">${direction === 'On Target' ? '✓ On Target' : direction + ' Profile'}</div>
+    <div class="result-grid">
+      <div class="result-item"><div class="rl">FC Difference</div><div class="rv">${diffSecs > 0 ? '+' : ''}${diffSecs}s</div></div>
+      <div class="result-item"><div class="rl">Adjustment</div><div class="rv">${adjDisplay}</div></div>
+      <div class="result-item"><div class="rl">New Profile</div><div class="rv big">${newPC}</div></div>
+    </div>
+  </div>`;
+}
 </script>
 </body>
 </html>
