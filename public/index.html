@@ -853,12 +853,22 @@ function authHeaders() {
 
 // ── API helper ───────────────────────────────────────────────────────────────
 async function api(path, body=null) {
-  const opts = { headers: authHeaders() };
+  const opts = { headers: authHeaders(), cache: 'no-store' };
   if (body) { opts.method = 'POST'; opts.body = JSON.stringify(body); }
   else      { opts.method = 'GET'; }
-  const r = await fetch('/api/' + path, opts);
-  if (r.status === 401) { signOut(); return null; }
-  return r.json();
+  try {
+    const r = await fetch('/api/' + path, opts);
+    if (r.status === 401) { signOut(); return null; }
+    if (!r.ok) {
+      const txt = await r.text();
+      console.error('API error', r.status, path, txt);
+      return null;
+    }
+    return await r.json();
+  } catch(e) {
+    console.error('API fetch failed', path, e);
+    return null;
+  }
 }
 
 // ── Sign out ─────────────────────────────────────────────────────────────────
