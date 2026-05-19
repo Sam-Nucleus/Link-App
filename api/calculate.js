@@ -4,16 +4,6 @@
 const { requireAuth } = require('./lib/auth');
 const { calculate } = require('./lib/calculate');
 
-async function parseJsonBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
-  return new Promise((resolve) => {
-    let data = '';
-    req.on('data', chunk => { data += chunk; });
-    req.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { resolve({}); } });
-    req.on('error', () => resolve({}));
-  });
-}
-
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
@@ -23,24 +13,34 @@ module.exports = async (req, res) => {
   const user = await requireAuth(req, res);
   if (!user) return;
 
-  const body = await parseJsonBody(req);
-  const { mode, density, process, tubeType, voltage, countryVal, continentVal, varietyCode, forcedPlanId } = body;
+  try {
+    // req.body is auto-parsed by Vercel for application/json.
+    // If it arrives as a string (some runtime versions), parse it.
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch(_) { body = {}; } }
+    if (!body || typeof body !== 'object') body = {};
 
-  if (!mode || !density || !process || !tubeType || !voltage) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    const { mode, density, process, tubeType, voltage, countryVal, continentVal, varietyCode, forcedPlanId } = body;
+
+    if (!mode || !density || !process || !tubeType || !voltage) {
+      return res.status(400).json({ error: 'Missing required fields', received: { mode, density, process, tubeType, voltage } });
+    }
+
+    const result = calculate({
+      mode,
+      density: parseFloat(density),
+      process,
+      tubeType,
+      voltage,
+      countryVal: countryVal || '',
+      continentVal: continentVal || '',
+      varietyCode: varietyCode || '',
+      forcedPlanId: forcedPlanId || null
+    });
+
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[calculate] unhandled error:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
-
-  const result = calculate({
-    mode,
-    density: parseFloat(density),
-    process,
-    tubeType,
-    voltage,
-    countryVal: countryVal || '',
-    continentVal: continentVal || '',
-    varietyCode: varietyCode || '',
-    forcedPlanId: forcedPlanId || null
-  });
-
-  return res.status(200).json(result);
 };
