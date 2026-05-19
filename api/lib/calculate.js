@@ -3,7 +3,8 @@
 
 const {
   POWER_CURVE, PLAN_PC_KEYS, COUNTRIES, VARIETIES, LEGACY,
-  PLANS, PLAN_NOTES, PLAN_NOTES_LANG, normalizePlan
+  PLANS, PLAN_NOTES, PLAN_NOTES_LANG, normalizePlan,
+  DEFAULT_COUNTRY, DEFAULT_VARIETY
 } = require('./data');
 
 // ── Utility ───────────────────────────────────────────────────────────────────
@@ -55,10 +56,15 @@ function getVarietyAdj(varietyCode, band) {
 function calculate({ mode, density, process, tubeType, voltage, countryVal, continentVal, varietyCode, forcedPlanId }) {
   if (!density || !process || !tubeType || !voltage) return { error: 'Missing required fields' };
 
+  // Apply Belize + Bourbon Orange as defaults when nothing is explicitly selected
+  const effectiveCountry = (countryVal || continentVal) ? countryVal : DEFAULT_COUNTRY;
+  const effectiveContinent = (countryVal || continentVal) ? continentVal : '';
+  const effectiveVariety = varietyCode || DEFAULT_VARIETY;
+
   const band = getBand(density);
   const voltAdj = getVoltAdj(voltage);
-  const countryPC = getCountryAdj(countryVal, continentVal, band);
-  const { pc: varietyPC, fan: varietyFan } = getVarietyAdj(varietyCode, band);
+  const countryPC = getCountryAdj(effectiveCountry, effectiveContinent, band);
+  const { pc: varietyPC, fan: varietyFan } = getVarietyAdj(effectiveVariety, band);
 
   // Determine plan
   const profile = LEGACY[varietyCode] || null;
@@ -107,10 +113,15 @@ function calculateManual({ style, planId, density, process, tubeType, voltage, c
   const plan = PLANS[style]?.find(p => p.id === planId);
   if (!plan) return { error: 'Plan not found' };
 
+  // Apply Belize + Bourbon Orange as defaults when nothing is explicitly selected
+  const effectiveCountry = (countryVal || continentVal) ? countryVal : DEFAULT_COUNTRY;
+  const effectiveContinent = (countryVal || continentVal) ? continentVal : '';
+  const effectiveVariety = varietyCode || DEFAULT_VARIETY;
+
   const band = getBand(density);
   const voltAdj = getVoltAdj(voltage);
-  const countryPC = getCountryAdj(countryVal, continentVal, band);
-  const { pc: varietyPC, fan: varietyFan } = getVarietyAdj(varietyCode, band);
+  const countryPC = getCountryAdj(effectiveCountry, effectiveContinent, band);
+  const { pc: varietyPC, fan: varietyFan } = getVarietyAdj(effectiveVariety, band);
 
   const hasInputs = !isNaN(density) && process && tubeType && voltage;
   let powerCurve = null, fanAdj = null, fanDirection = null;
