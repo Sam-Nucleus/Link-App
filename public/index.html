@@ -866,6 +866,7 @@ async function api(path, body=null) {
     if (!r.ok) {
       const txt = await r.text();
       console.error('API error', r.status, path, txt);
+      window._lastApiError = { status: r.status, text: txt };
       return null;
     }
     const json = await r.json();
@@ -873,7 +874,9 @@ async function api(path, body=null) {
     return json;
   } catch(e) {
     clearTimeout(timeoutId);
-    console.error('API fetch failed', path, e.name === 'AbortError' ? 'TIMED OUT after 12s' : e);
+    const msg = e.name === 'AbortError' ? 'TIMED OUT after 12s' : e.message;
+    console.error('API fetch failed', path, msg);
+    window._lastApiError = { status: 0, text: msg };
     return null;
   }
 }
@@ -1104,7 +1107,8 @@ async function calculate() {
   out.innerHTML = `<div style="padding:40px;text-align:center"><div class="spinner" style="margin:auto"></div></div>`;
   const result = await api('calculate', body);
   if (!result) {
-    out.innerHTML = `<div class="warn-box" style="margin:20px">Unable to load recommendation. Check your connection and try again.</div>`;
+    const _e = window._lastApiError || {};
+    out.innerHTML = `<div class="warn-box" style="margin:20px">Unable to load recommendation. ${_e.status ? `[${_e.status}] ${_e.text}` : 'Check your connection and try again.'}</div>`;
     return;
   }
 
