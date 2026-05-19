@@ -4,6 +4,16 @@
 const { requireAuth } = require('./lib/auth');
 const { calculateManual } = require('./lib/calculate');
 
+async function parseJsonBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { resolve({}); } });
+    req.on('error', () => resolve({}));
+  });
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
@@ -13,7 +23,8 @@ module.exports = async (req, res) => {
   const user = await requireAuth(req, res);
   if (!user) return;
 
-  const { style, planId, density, process, tubeType, voltage, countryVal, continentVal, varietyCode } = req.body;
+  const body = await parseJsonBody(req);
+  const { style, planId, density, process, tubeType, voltage, countryVal, continentVal, varietyCode } = body;
 
   const result = calculateManual({
     style,
