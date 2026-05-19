@@ -2412,7 +2412,7 @@ const PLANS = {"cupping": [{"id": "A", "name": "Cupping A", "img": "profiles/Cup
 
 const PLAN_PC_KEYS = {
   cupping:{A:'A10%',B:'B15%',C:'C18%',D:'D12%',E:'E20%'},
-  filter:{A:'Filter A',B:'Filter B',C:'Filter C',D:'',E:'Filter E','WBrC 24':'Filter WBRC 24'},
+  filter:{A:'Filter A',B:'Filter B',C:'Filter C',D:'Filter D',E:'Filter E',WBrC24:'WBrC 24'},
   espresso:{A:'Espresso A',B:'Espresso B',C:'Espresso C',D:'Espresso D',E:'Espresso E',F:'Espresso F'},
   omni:{A:'Omni A',B:'Omni B',C:'Omni C',D:'Omni D',E:'Omni E',F:'Omni F'}
 };

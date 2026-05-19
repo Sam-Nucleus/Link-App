@@ -1107,8 +1107,7 @@ async function calculate() {
   out.innerHTML = `<div style="padding:40px;text-align:center"><div class="spinner" style="margin:auto"></div></div>`;
   const result = await api('calculate', body);
   if (!result) {
-    const _e = window._lastApiError || {};
-    out.innerHTML = `<div class="warn-box" style="margin:20px">Unable to load recommendation. ${_e.status ? `[${_e.status}] ${_e.text}` : 'Check your connection and try again.'}</div>`;
+    out.innerHTML = `<div class="warn-box" style="margin:20px">Unable to load recommendation. Check your connection and try again.</div>`;
     return;
   }
 
@@ -1156,6 +1155,9 @@ function renderResult(r, mode, fp) {
 // ── Roast Now ─────────────────────────────────────────────────────────────────
 async function roastNow(style, planId, displayName, pcKey) {
   forcedPlan = { style, planId, displayName, planKey: pcKey };
+  // Set the NSE mode selector to match the plan's style so PLAN_PC_KEYS lookup is correct
+  const modeEl = document.getElementById('mode');
+  if (modeEl && ['cupping','filter','espresso','omni'].includes(style)) modeEl.value = style;
   showTab('calculator', document.querySelector('[data-tab="calculator"]'));
   await calculate();
 }

@@ -69,6 +69,9 @@ function calculate({ mode, density, process, tubeType, voltage, countryVal, cont
     planName = forcedPlanId;
   } else if (modeData) {
     planName = modeData.plan;
+  }
+  // Always include crack/DTR from variety data when available
+  if (modeData) {
     crack = modeData.crack;
     dtr = modeData.dtr;
     filterDtr = modeData.filterDtr;
