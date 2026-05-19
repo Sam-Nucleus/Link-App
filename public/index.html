@@ -1103,7 +1103,10 @@ async function calculate() {
 
   out.innerHTML = `<div style="padding:40px;text-align:center"><div class="spinner" style="margin:auto"></div></div>`;
   const result = await api('calculate', body);
-  if (!result) return;
+  if (!result) {
+    out.innerHTML = `<div class="warn-box" style="margin:20px">Unable to load recommendation. Check your connection and try again.</div>`;
+    return;
+  }
 
   renderResult(result, mode, forcedPlan);
   forcedPlan = null;
@@ -1190,7 +1193,10 @@ async function calculateManual() {
     style, planId, density, process, tubeType: tube, voltage,
     countryVal: country, continentVal: continent, varietyCode: variety
   });
-  if (!result) return;
+  if (!result) {
+    out.innerHTML = `<div class="warn-box" style="margin:20px">Unable to load plan data. Check your connection and try again.</div>`;
+    return;
+  }
 
   const metricsHtml = Object.entries(result.metrics || {})
     .map(([k,v]) => `<div class="metric-item"><span class="metric-key">${k}</span><span class="metric-val">${v}</span></div>`).join('');
@@ -1235,14 +1241,17 @@ async function openInfo(style, planId) {
 
   const result = await api(`plan-info?style=${style}&plan=${planId}&lang=${currentLang}`);
   if (!result || !result.notes) {
-    document.getElementById('info-modal-body').innerHTML = `<p style="padding:24px;color:var(--text2)">No notes found for this plan.</p>`;
+    document.getElementById('info-modal-body').innerHTML = `<p style="padding:24px;color:var(--text2)">No notes available for this plan.</p>`;
     return;
   }
   const notes = result.notes;
-  document.getElementById('info-modal-title').textContent = notes.Name || planId;
+  // Look up full plan name from loaded plans data
+  const planList = (window.APP_PLANS || {})[style] || [];
+  const planMeta = planList.find(p => p.id === planId);
+  document.getElementById('info-modal-title').textContent = planMeta ? planMeta.name : (notes.Name || planId);
   const body = Object.entries(notes)
     .filter(([k]) => k !== 'Name')
-    .map(([k,v]) => `<div class="info-section"><div class="info-section-title">${k}</div><div class="info-section-body">${v}</div></div>`)
+    .map(([k,v]) => `<div class="info-section"><h4>${k}</h4><p>${v}</p></div>`)
     .join('');
   document.getElementById('info-modal-body').innerHTML = body;
 }
